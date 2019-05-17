@@ -40,9 +40,9 @@
 
 #### 首页
 
-![home](.\home.png)
+![home](./home.png)
 
 #### 详情页
 
-![detail](.\detail.jpg)
+![detail](./detail.jpg)
 
