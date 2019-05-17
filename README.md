@@ -40,9 +40,9 @@
 
 #### 首页
 
-![home](G:\TJ\Lessons\Web\Assignment3\home.png)
+![home](.\home.png)
 
 #### 详情页
 
-![detail](G:\TJ\Lessons\Web\Assignment3\detail.jpg)
+![detail](.\detail.jpg)
 
