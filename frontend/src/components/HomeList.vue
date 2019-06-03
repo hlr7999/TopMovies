@@ -23,10 +23,10 @@
       </div>
 
       <el-table
-        v-loading="loadingAll"
+        v-loading="loading"
         element-loading-text="拼命加载中"
         element-loading-spinner="el-icon-loading"
-        :data="currentFilmList">
+        :data="filmList">
         <el-table-column label="" width="80">
           <template slot-scope="scope">
             <el-image :src="scope.row.poster" class="poster"></el-image>
@@ -76,7 +76,7 @@
         :current-page.sync="currentPage"
         @current-change="changePage"
         style="margin-top: 10px"
-        :total="filmList.length">
+        :total="10000">
       </el-pagination>
 
     </el-card>
@@ -88,9 +88,8 @@
 export default {
   data() {
     return {
-      loadingAll: true,
-      filmList: this.$store.state.filmList,
-      currentFilmList: [],
+      loading: true,
+      filmList: [],
       sortWaies: [{
         id: 0,
         label: "评分"
@@ -107,86 +106,30 @@ export default {
   },
   methods: {
     getData() {
-      if (!this.filmList.length) {
-        this.$axios.get("http://47.100.225.59:10080/films")
-        .then(res => {
-          this.filmList = res.data
-          this.filmList.forEach(item => {
-            item.rating_star = Number(item.rating.average) / 2
-            item.pubdate = item.pubdate[0].split("(")[0]
-          })
-          this.$store.commit("newFilmList", this.filmList)
-          this.loadingAll = false
-          this.currentFilmList = this.filmList.slice(
-            (this.currentPage - 1) * 10,
-            (this.currentPage - 1) * 10 + 10
-          )
-        })
-      } else {
-        this.loadingAll = false
-        this.currentFilmList = this.filmList.slice(
-          (this.currentPage - 1) * 10,
-          (this.currentPage - 1) * 10 + 10
-        )
+      let sort = this.sortWay
+      if (sort === "") {
+        sort = 3
       }
+      this.$axios.get(`http://47.100.225.59:10080/films/${this.currentPage}/${sort}`)
+      .then(res => {
+        this.filmList = res.data
+        this.filmList.forEach(item => {
+          item.rating_star = Number(item.rating.average) / 2
+          item.pubdate = item.pubdate[0].split("(")[0]
+        })
+        this.loading = false
+      })
     },
     changeSort() {
-      this.loadingAll = true
-      switch (this.sortWay) {
-      case 0:
-        var compare = function(x, y) {
-          var valx = x.rating.average
-          var valy = y.rating.average
-          if (valx > valy) {
-            return -1
-          } else if (valx < valy) {
-            return 1
-          } else {
-            return 0
-          }
-        }
-        this.filmList.sort(compare)
-        break;
-      case 1:
-        var compare = function(x, y) {
-          var valx = Number(x.rating.rating_people)
-          var valy = Number(y.rating.rating_people)
-          if (valx > valy) {
-            return -1
-          } else if (valx < valy) {
-            return 1
-          } else {
-            return 0
-          }
-        }
-        this.filmList.sort(compare)
-        break;
-      case 2:
-        var compare = function(x, y) {
-          var valx = x.pubdate
-          var valy = y.pubdate
-          if (valx > valy) {
-            return -1
-          } else if (valx < valy) {
-            return 1
-          } else {
-            return 0
-          }
-        }
-        this.filmList.sort(compare)
-        break;
-      }
-      this.loadingAll = false
+      this.loading = true
       this.currentPage = 1
+      this.getData()
       this.$store.commit("newPage", this.currentPage)
       this.$store.commit("newSort", this.sortWay)
-      this.currentFilmList = this.filmList.slice(0, 10)
     },
     changePage: function() {
-      this.currentFilmList = this.filmList.slice(
-        (this.currentPage - 1) * 10,
-        (this.currentPage - 1) * 10 + 10
-      )
+      this.loading = true
+      this.getData()
       this.$store.commit("newPage", this.currentPage)
     },
     viewIntro: function(id) {

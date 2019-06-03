@@ -12,14 +12,10 @@ Vue.use(ElementUI)
 
 const store = new Vuex.Store({
   state:{
-    filmList:[],
     currentPage: 1,
     sortWay: ""
   },
   mutations:{
-    newFilmList(state, list) {
-      state.filmList = list
-    },
     newPage(state, page) {
       state.currentPage = page
     },

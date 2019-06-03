@@ -26,11 +26,12 @@ func main() {
 		if err != nil {
 			log.Panic(err)
 		}
+		return
 	}
 
 	e := echo.New()
 	e.Use(middleware.Logger())
-	e.GET("/films", db.GetAllFilms)
+	e.GET("/films/:page/:sort", db.GetPageFilms)
 	e.GET("/films/:id", db.GetFilm)
 	e.Logger.Fatal(e.Start(addr))
 }

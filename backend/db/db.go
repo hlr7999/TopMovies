@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"io/ioutil"
+	"sort"
+	"strconv"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/labstack/echo"
@@ -38,6 +40,31 @@ type Film struct {
 	Duration  string    `json:"duration" bson:"duration"`
 }
 
+type Films []Film
+func (f Films) Len() int { return len(f) }
+func (f Films) Swap(i, j int) { f[i], f[j] = f[j], f[i] }
+
+type SortByRating struct{ Films }
+func (f SortByRating) Less(i, j int) bool {
+	return f.Films[i].Rating.Average > f.Films[j].Rating.Average
+}
+
+type SortByRatingPeople struct{ Films }
+func (f SortByRatingPeople) Less(i, j int) bool {
+	str1 := f.Films[i].Rating.RatingPeople
+	str2 := f.Films[j].Rating.RatingPeople
+	if (len(str1) != len(str2)) {
+		return len(str1) > len(str2)
+	} else {
+		return str1 > str2
+	}
+}
+
+type SortByPubdate struct{ Films }
+func (f SortByPubdate) Less(i, j int) bool {
+	return f.Films[i].Pubdate[0] > f.Films[j].Pubdate[0]
+}
+
 func InitializeGlobalDB(url string) error {
 	session, err := mgo.Dial(url)
 	if err != nil {
@@ -53,7 +80,7 @@ func InitData() error {
 	defer db.Close()
 	database := db.DB("Films")
 
-	data, err := ioutil.ReadFile("G:/TJ/Lessons/Web/Assignment3/backend/db/films_all.json")
+	data, err := ioutil.ReadFile("./films_all.json")
     if err != nil {
         return err
 	}
@@ -71,19 +98,30 @@ func InitData() error {
 	return nil
 }
 
-func GetAllFilms(c echo.Context) (err error) {
+func GetPageFilms(c echo.Context) (err error) {
+	page, _ := strconv.Atoi(c.Param("page"))
+	sortWay := c.Param("sort")
 	db := GlobalSession.Clone()
 	defer db.Close()
 	database := db.DB("Films")
 
-	var films []Film
+	var films Films
 	err = database.C("films").Find(nil).All(&films)
 	if err != nil {
 		return err
 	}
 
+	switch sortWay {
+	case "0":
+		sort.Sort(SortByRating{films})
+	case "1":
+		sort.Sort(SortByRatingPeople{films})
+	case "2":
+		sort.Sort(SortByPubdate{films})
+	}
+
 	c.Response().Header().Set("Access-Control-Allow-Origin", "*")
-	return c.JSON(http.StatusOK, films)
+	return c.JSON(http.StatusOK, films[(page-1)*10:page*10])
 }
 
 func GetFilm(c echo.Context) (err error) {
